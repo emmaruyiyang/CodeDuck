@@ -1,0 +1,44 @@
+{
+  "name": "quackcode",
+  "displayName": "QuackCode",
+  "description": "An adorable duck companion for Claude Code - floats on top, bounces, quacks, and poops when waiting",
+  "version": "0.1.0",
+  "main": "dist/main.js",
+  "homepage": "https://github.com/ruyiy/CodeDuck",
+  "author": "Ruyi Yang",
+  "license": "MIT",
+  "scripts": {
+    "compile": "esbuild ./src/main.ts ./src/preload.ts --bundle --outdir=dist --format=cjs --platform=node --target=node20 --external:electron",
+    "watch": "npm run compile -- --sourcemap --watch",
+    "dev": "npm run compile && electron .",
+    "build": "npm run compile -- --minify",
+    "dist": "npm run build && electron-builder --mac dmg"
+  },
+  "build": {
+    "appId": "com.quackcode.app",
+    "productName": "QuackCode",
+    "asar": false,
+    "files": [
+      "dist/**/*",
+      "renderer/**/*",
+      "data/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.developer-tools"
+    },
+    "directories": {
+      "output": "release"
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "electron": "^24.8.8",
+    "electron-builder": "^24.13.3",
+    "esbuild": "^0.20.2",
+    "typescript": "^5.3.3"
+  }
+}

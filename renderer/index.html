@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuackCode Duck</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* 动画相关的尺寸/时长由 JS 里的 CONFIG 统一注入（见脚本顶部 CONFIG） */
+    :root {
+      --duck-size: 64px;
+      --duck-w: 64px;
+      --duck-top: 4px;
+      --jump-h: 16px;
+      --poop-size: 40px;
+      --poop-fall: 1.1s;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: transparent;
+      user-select: none; -webkit-user-select: none;
+    }
+
+    /* 遮罩铺满整个窗口（= VS Code 窗口范围），鸭子在顶部、💩 往下掉到底部 */
+    #stage { position: fixed; inset: 0; }
+
+    /* ---------- 鸭子（小一点：64px）。#duck 负责水平定位，.emoji 负责跳跃动画 ---------- */
+    #duck {
+      position: absolute;
+      top: var(--duck-top);
+      left: 0;
+      width: var(--duck-w);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .flip { transform: none; } /* duck-cartoon.svg 按原样显示；想镜像朝向改成 scaleX(-1) */
+    .emoji {
+      width: var(--duck-size);
+      height: auto;
+      display: block;
+      -webkit-user-drag: none;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.25));
+      animation: idle 2s ease-in-out infinite;
+    }
+    @keyframes idle {
+      0%,100% { transform: translateY(0) rotateZ(-2deg); }
+      50%     { transform: translateY(-6px) rotateZ(2deg); }
+    }
+    /* running：只做上下小跳，水平前进由 JS 移动 #duck 实现 */
+    @keyframes jump {
+      0%,100% { transform: translateY(0); }
+      50%     { transform: translateY(calc(-1 * var(--jump-h))); }
+    }
+    @keyframes quack {
+      0%,100% { transform: scaleY(1); }
+      25%     { transform: scaleY(.8); }
+      50%     { transform: scaleY(1); }
+    }
+    @keyframes resolved {
+      0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); }
+    }
+    .emoji.running  { animation: jump 0.35s ease-in-out infinite; }
+    .emoji.waiting  { animation: quack 0.4s ease-in-out 1.5s infinite; }
+    .emoji.resolved { animation: resolved 0.4s ease-out; }
+    .emoji.done     { animation: none; }
+
+    .status {
+      margin-top: 2px;
+      font-size: 12px;
+      color: rgba(255,255,255,.85);
+      text-shadow: 0 1px 2px rgba(0,0,0,.6);
+      font-family: system-ui;
+      opacity: 0; transition: opacity .3s;
+      white-space: nowrap;
+    }
+    #duck:hover .status { opacity: 1; }
+    .status.waiting { color: #ffeb3b; }
+
+    /* ---------- 💩（Poo.svg），从鸭子脚下往下掉到窗口底部 ---------- */
+    .poop {
+      position: absolute;
+      width: var(--poop-size);
+      height: auto;
+      -webkit-user-drag: none;
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,.3));
+      /* top 用 JS 从“鸭子处”过渡到“窗口底部”，形成下落 */
+      transition: top var(--poop-fall) cubic-bezier(.45,.05,.55,.95);
+      will-change: top;
+    }
+    @keyframes poop-pop {
+      0%   { transform: scale(.4); opacity: 0; }
+      100% { transform: scale(1);  opacity: 1; }
+    }
+    .poop.exploding { animation: poop-explode .5s ease-out forwards; }
+    @keyframes poop-explode {
+      0%   { opacity: 1; transform: translateY(0) scale(1) rotateZ(0); }
+      100% { opacity: 0; transform: translateY(-60px) scale(.2) rotateZ(720deg); }
+    }
+
+    /* ---------- 炸弹 ---------- */
+    .bomb {
+      position: absolute;
+      font-size: 44px;
+      pointer-events: none;
+    }
+    .bomb.active { animation: bomb-explode .6s ease-out forwards; }
+    @keyframes bomb-explode {
+      0%   { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-80px) scale(0); }
+    }
+
+    /* ---------- 整屏爆炸：震屏 ---------- */
+    #stage.shaking { animation: screenshake .42s cubic-bezier(.36,.07,.19,.97); }
+    @keyframes screenshake {
+      0%,100% { transform: translate(0,0); }
+      8%   { transform: translate(-12px,-8px) rotate(-.4deg); }
+      18%  { transform: translate(11px,9px) rotate(.4deg); }
+      28%  { transform: translate(-10px,6px) rotate(-.3deg); }
+      38%  { transform: translate(10px,-8px) rotate(.3deg); }
+      50%  { transform: translate(-8px,5px); }
+      62%  { transform: translate(7px,-5px); }
+      74%  { transform: translate(-5px,3px); }
+      86%  { transform: translate(3px,-2px); }
+    }
+
+    /* 爆炸粒子/闪光通用 */
+    .fx { position: absolute; pointer-events: none; z-index: 9998; will-change: transform, opacity; }
+    #flash {
+      position: fixed; inset: 0; pointer-events: none; z-index: 9997; opacity: 0;
+      background: radial-gradient(circle at 50% 45%,
+        rgba(255,220,120,.85), rgba(255,120,20,.35) 38%, rgba(255,60,0,0) 68%);
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div id="duck">
+      <div class="flip"><img class="emoji" id="emoji" src="../data/img/duck-hat.svg" alt="duck" draggable="false"></div>
+      <div class="status" id="status">😴</div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // 动画参数（全部集中在这里，方便调整）
+    // ============================================================
+    const CONFIG = {
+      // —— 尺寸 / 位置 ——
+      duckSize: 64,          // 鸭子大小 px
+      duckWidth: 64,         // 鸭子水平占宽（行走边界/居中用）px
+      duckTop: 4,            // 无法贴顶边时（全屏兜底）鸭子距窗口顶部 px
+      duckFootOffset: 0,     // 脚相对 VS Code 顶边的微调：正数=往下踩一点，负数=往上抬
+      poopSize: 40,          // 💩 大小 px
+
+      // —— 运动 ——
+      walkSpeed: 2.6,        // 走路速度 px/帧（约 60fps）
+      jumpHeight: 16,        // running 时上下跳高度 px
+
+      // —— 💩 下落 ——
+      poopStartTop: 58,      // 💩 起点（鸭子脚下）px
+      poopBottomMargin: 52,  // 💩 落点距窗口底部 px
+      poopFallSec: 2.4,      // 💩 下落时长 秒（越大掉得越慢）
+
+      // —— 节奏 ——
+      poopIntervalMs: 3000,  // 掉屎间隔 ms（鸭叫与掉屎同步，共用此间隔）
+      maxPoops: 5,           // 同时存在的最多屎数
+    };
+
+    // 把 CONFIG 里与 CSS 相关的值注入 CSS 变量
+    (function applyConfig() {
+      const s = document.documentElement.style;
+      s.setProperty('--duck-size', CONFIG.duckSize + 'px');
+      s.setProperty('--duck-w', CONFIG.duckWidth + 'px');
+      s.setProperty('--duck-top', CONFIG.duckTop + 'px');
+      s.setProperty('--jump-h', CONFIG.jumpHeight + 'px');
+      s.setProperty('--poop-size', CONFIG.poopSize + 'px');
+      s.setProperty('--poop-fall', CONFIG.poopFallSec + 's');
+    })();
+
+    // ================= 基本状态 =================
+    let currentState = 'idle';
+    let walkEnabled = true;          // 从左往右走 / 原地跳（点击切换，主进程同步）
+    let poopTimer = null;
+    let quackInterval = null;
+
+    const stage = document.getElementById('stage');
+    const duckEl = document.getElementById('duck');
+    const emoji = document.getElementById('emoji');
+    const status = document.getElementById('status');
+
+    // 舞台尺寸 = 窗口尺寸（窗口已被主进程对齐到 VS Code 窗口）
+    function stageW() { return window.innerWidth; }
+    function stageH() { return window.innerHeight; }
+
+    // VS Code 顶边在遮罩内的 y（主进程发来的头顶空间；全屏时=0）
+    let topInset = 0;
+    let poopStartY = CONFIG.poopStartTop; // 💩 起点（鸭子脚下），随鸭子竖直位置更新
+
+    // 按当前图标实测高度，上报所需头顶空间（= 图标高 + 跳跃高 + 余量），换图标自适应
+    let lastReportedHeadroom = -1;
+    function reportHeadroom() {
+      const h = emoji.offsetHeight || CONFIG.duckSize;
+      const need = Math.ceil(h + CONFIG.jumpHeight + 14);
+      if (need !== lastReportedHeadroom && window.electronAPI && window.electronAPI.reportHeadroom) {
+        lastReportedHeadroom = need;
+        window.electronAPI.reportHeadroom(need);
+      }
+    }
+
+    // 让鸭子“脚踩 VS Code 顶边”：脚底落在 topInset 处；头顶空间不足（全屏）时退回窗口内顶部
+    function positionDuckVertically() {
+      const h = emoji.offsetHeight || CONFIG.duckSize; // 用图片实测高度（SVG 非正方也准）
+      // 最小 top：保证跳到最高点（上移 jumpHeight）时头也不会越过窗口顶被裁
+      const minTop = CONFIG.jumpHeight + 4;
+      let top = topInset - h + CONFIG.duckFootOffset;  // 脚底=顶边
+      if (top < minTop) top = minTop;                  // 头顶不够 → 下移，避免裁头
+      duckEl.style.top = Math.round(top) + 'px';
+      poopStartY = Math.round(top + h - 8);            // 💩 从脚下开始掉
+      reportHeadroom();                                // 图标高度可能变 → 同步头顶空间
+    }
+    const DUCK_W = CONFIG.duckWidth;
+
+    // 💩 图片素材（下落 + 爆炸都用它）
+    const POO_IMG = '../data/img/Poo.svg';
+
+    // ================= 音效（播放 data/sound 下的 mp3） =================
+    const SOUND = {
+      poop: encodeURI('../data/sound/explosive-pupu-sound.mp3'),   // 💩 等待时
+      boom: encodeURI('../data/sound/bomb-sound.mp3'),             // 炸弹
+      done: encodeURI('../data/sound/Squeeze a toy duck-sound.mp3') // 完成
+    };
+    // 每次 new Audio 播放，允许快速重复/重叠
+    let muted = false;
+    function playSound(src, vol) {
+      if (muted) return;
+      try {
+        const a = new Audio(src);
+        a.volume = (vol == null ? 1 : vol);
+        a.play().catch(() => {});
+      } catch (e) {}
+    }
+    function playQuack() { playSound(SOUND.poop); }  // 💩 音（与掉屎同步）
+    function playBoom()  { playSound(SOUND.boom); }  // 炸弹
+    function playDone()  { playSound(SOUND.done); }  // 完成
+
+    // ================= 行走（DOM 内水平移动 #duck） =================
+    let duckX = 0;
+    let walkRAF = null;
+
+    function walkStep() {
+      const maxX = Math.max(0, stageW() - DUCK_W);
+      duckX += CONFIG.walkSpeed;
+      if (duckX > maxX) duckX = 0;      // 到右边界 → 回到左边，继续从左往右
+      duckEl.style.left = Math.round(duckX) + 'px';
+      walkRAF = requestAnimationFrame(walkStep);
+    }
+    function startWalk() { if (!walkRAF) walkStep(); }
+    function stopWalk() { if (walkRAF) { cancelAnimationFrame(walkRAF); walkRAF = null; } }
+    function centerDuck() {
+      duckX = Math.round((stageW() - DUCK_W) / 2);
+      duckEl.style.left = duckX + 'px';
+    }
+    // 根据是否行走，决定 running 时是走还是原地跳
+    function applyRunMotion() {
+      if (currentState !== 'running') { stopWalk(); return; }
+      if (walkEnabled) startWalk();
+      else { stopWalk(); centerDuck(); }
+    }
+
+    // ================= 💩 从鸭子脚下往下掉（掉到整个窗口底部） =================
+    let poops = [];
+
+    function dropPoop() {
+      if (poops.length >= CONFIG.maxPoops) return;
+      const poop = document.createElement('img');
+      poop.className = 'poop';
+      poop.src = POO_IMG;
+      poop.draggable = false;
+      // 从鸭子当前水平位置的脚下出现
+      const startLeft = Math.round(duckX + DUCK_W / 2 - CONFIG.poopSize / 2);
+      poop.style.left = startLeft + 'px';
+      poop.style.top = poopStartY + 'px';   // 鸭子脚下（起点，随鸭子竖直位置）
+      poop.style.animation = 'poop-pop .25s ease-out';
+      stage.appendChild(poop);
+      poops.push(poop);
+      // 强制 reflow 让初始 top 先生效，再改到落点，CSS transition 才会真正“下落”
+      void poop.offsetHeight;
+      const landing = stageH() - CONFIG.poopBottomMargin;   // 落到窗口底部
+      poop.style.top = landing + 'px';
+      // 落到底后淡出消失
+      poop.addEventListener('transitionend', () => {
+        poop.style.transition = 'opacity .3s';
+        poop.style.opacity = '0';
+        setTimeout(() => { poop.remove(); poops = poops.filter(p => p !== poop); }, 300);
+      }, { once: true });
+    }
+
+    function clearPoops() {
+      poops.forEach(p => p.remove());
+      poops = [];
+    }
+
+    // 在 (x,y) 放一个居中的爆炸 emoji（用于 💥🔥）
+    function fxEmoji(char, x, y, size, keyframes, dur) {
+      const el = document.createElement('div');
+      el.className = 'fx';
+      el.textContent = char;
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.style.fontSize = size + 'px';
+      el.style.lineHeight = '1';
+      stage.appendChild(el);
+      el.animate(keyframes, { duration: dur, easing: 'ease-out', fill: 'forwards' });
+      setTimeout(() => el.remove(), dur + 40);
+      return el;
+    }
+
+    // 在 (x,y) 放一张居中的图片（用于爆炸时的大号 Poo.svg）
+    function fxImg(src, x, y, size, keyframes, dur) {
+      const el = document.createElement('img');
+      el.className = 'fx';
+      el.src = src;
+      el.draggable = false;
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+      el.style.width = size + 'px';
+      el.style.height = 'auto';
+      stage.appendChild(el);
+      el.animate(keyframes, { duration: dur, easing: 'ease-out', fill: 'forwards' });
+      setTimeout(() => el.remove(), dur + 40);
+      return el;
+    }
+
+    // 全屏橙光一闪
+    function flash() {
+      const f = document.createElement('div');
+      f.id = 'flash';
+      stage.appendChild(f);
+      f.animate([{ opacity: 0 }, { opacity: 1, offset: .15 }, { opacity: 0 }],
+        { duration: 480, easing: 'ease-out', fill: 'forwards' });
+      setTimeout(() => f.remove(), 500);
+    }
+
+    // 震屏
+    function shakeScreen() {
+      stage.classList.remove('shaking');
+      void stage.offsetWidth; // 重置动画
+      stage.classList.add('shaking');
+      setTimeout(() => stage.classList.remove('shaking'), 440);
+    }
+
+    // 整屏爆炸：闪光 + 震屏 + 💥🔥 + 一大堆大号 💩 铺屏
+    function explodePoops() {
+      // 清掉正在下落的旧屎
+      poops.forEach(p => p.remove());
+      poops = [];
+
+      const W = stageW(), H = stageH();
+      const base = Math.min(W, H);
+      // 爆炸中心 = 鸭子停住的水平位置（即屎往下掉的那一列），夹在屏内
+      const cx = Math.min(Math.max(duckX + DUCK_W / 2, W * 0.14), W * 0.86);
+      const cy = H * 0.5; // 竖直取中部（屎下落经过的区域）
+
+      flash();
+      shakeScreen();
+
+      // 中心爆炸：💥 + 🔥（放大后淡出，范围收窄）
+      fxEmoji('💥', cx, cy, base * 0.42, [
+        { transform: 'translate(-50%,-50%) scale(.2)', opacity: .95 },
+        { transform: 'translate(-50%,-50%) scale(1.15)', opacity: 1, offset: .3 },
+        { transform: 'translate(-50%,-50%) scale(1.45)', opacity: 0 }
+      ], 650);
+      fxEmoji('🔥', cx, cy + base * 0.04, base * 0.3, [
+        { transform: 'translate(-50%,-50%) scale(.2)', opacity: .9 },
+        { transform: 'translate(-50%,-50%) scale(1.1)', opacity: 1, offset: .3 },
+        { transform: 'translate(-50%,-50%) scale(1.5) translateY(-30px)', opacity: 0 }
+      ], 750);
+
+      // 一堆大号 💩 围着爆炸中心（鸭子停住处）散开：弹出 → 停留 → 淡出
+      const n = 13;
+      const spreadX = W * 0.18, spreadY = H * 0.16; // 散布半径（收窄）
+      for (let i = 0; i < n; i++) {
+        const x = cx + (Math.random() * 2 - 1) * spreadX;
+        const y = cy + (Math.random() * 2 - 1) * spreadY;
+        const size = 60 + Math.random() * 50;
+        const rot = Math.random() * 60 - 30;
+        setTimeout(() => {
+          fxImg(POO_IMG, x, y, size, [
+            { transform: 'translate(-50%,-50%) scale(0) rotate(0deg)', opacity: 0 },
+            { transform: `translate(-50%,-50%) scale(1.15) rotate(${rot}deg)`, opacity: 1, offset: .25 },
+            { transform: `translate(-50%,-50%) scale(1) rotate(${rot}deg)`, opacity: 1, offset: .7 },
+            { transform: `translate(-50%,-50%) scale(.6) rotate(${rot}deg)`, opacity: 0 }
+          ], 1100);
+        }, Math.random() * 130);
+      }
+    }
+
+    // ================= 状态机 → 表现 =================
+    function setEmojiClass(cls) {
+      emoji.classList.remove('running', 'waiting', 'resolved', 'done');
+      if (cls) emoji.classList.add(cls);
+    }
+
+    function setState(newState) {
+      if (window.electronAPI) window.electronAPI.log('setState → ' + newState);
+      currentState = newState;
+
+      switch (newState) {
+        case 'running':
+          setEmojiClass('running');
+          status.textContent = '🏃'; status.classList.remove('waiting');
+          if (quackInterval) { clearInterval(quackInterval); quackInterval = null; }
+          if (poopTimer) { clearInterval(poopTimer); poopTimer = null; }
+          applyRunMotion();
+          break;
+
+        case 'waitingInput':
+          setEmojiClass('waiting');
+          status.textContent = '⏳'; status.classList.add('waiting');
+          stopWalk(); // 停在原地拉屎，不复位
+          if (poopTimer) clearInterval(poopTimer);
+          // 声音与掉屎同步：同一时刻既掉一坨又叫一声
+          const emit = () => {
+            if (currentState !== 'waitingInput') { clearInterval(poopTimer); poopTimer = null; return; }
+            dropPoop();
+            playQuack();
+          };
+          emit(); // 立即来一次
+          poopTimer = setInterval(emit, CONFIG.poopIntervalMs);
+          break;
+
+        case 'resolved':
+          setEmojiClass('resolved');
+          status.textContent = '💣'; status.classList.remove('waiting');
+          if (quackInterval) { clearInterval(quackInterval); quackInterval = null; }
+          if (poopTimer) { clearInterval(poopTimer); poopTimer = null; }
+          playBoom();
+          explodePoops();     // 炸屎
+          break;
+
+        case 'done':
+          setEmojiClass('done');
+          status.textContent = '✨'; status.classList.remove('waiting');
+          if (quackInterval) { clearInterval(quackInterval); quackInterval = null; }
+          if (poopTimer) { clearInterval(poopTimer); poopTimer = null; }
+          stopWalk();
+          clearPoops();       // 完成后清空 💩
+          playDone();
+          break;
+
+        case 'idle':
+        default:
+          setEmojiClass(null);
+          status.textContent = '😴'; status.classList.remove('waiting');
+          if (quackInterval) { clearInterval(quackInterval); quackInterval = null; }
+          if (poopTimer) { clearInterval(poopTimer); poopTimer = null; }
+          stopWalk(); // 停在结束的位置，不复位
+          clearPoops();
+          break;
+      }
+    }
+
+    // ================= 与主进程通信 =================
+    if (window.electronAPI) {
+      window.electronAPI.log('renderer ready');
+      window.electronAPI.onStateChange((data) => {
+        if (typeof data.walkEnabled === 'boolean') walkEnabled = data.walkEnabled;
+        if (typeof data.muted === 'boolean') muted = data.muted;
+        setState(data.state);
+      });
+      window.electronAPI.onWalkMode((enabled) => {
+        walkEnabled = enabled;
+        applyRunMotion(); // 立即生效：running 中切换走/原地跳
+      });
+      window.electronAPI.onLayout((data) => {
+        if (typeof data.topInset === 'number') topInset = data.topInset;
+        positionDuckVertically(); // 顶边位置变化（窗口/全屏切换）→ 重新踩边
+      });
+      window.electronAPI.onMute((m) => { muted = m; });
+    } else {
+      document.title = 'QuackCode: electronAPI 缺失!';
+      document.body.style.outline = '4px solid red';
+    }
+
+    // ================= 鼠标：默认穿透，悬停鸭子才可交互；点击=切换走/跳 =================
+    let ignoringMouse = true;
+    function isOverDuck(cx, cy) {
+      const r = emoji.getBoundingClientRect(), pad = 8;
+      return cx >= r.left - pad && cx <= r.right + pad && cy >= r.top - pad && cy <= r.bottom + pad;
+    }
+    function setIgnore(ignore) {
+      if (ignore === ignoringMouse) return;
+      ignoringMouse = ignore;
+      if (window.electronAPI) window.electronAPI.setIgnoreMouse(ignore);
+    }
+    document.addEventListener('mousemove', (e) => {
+      setIgnore(!isOverDuck(e.clientX, e.clientY));
+    });
+    emoji.addEventListener('click', () => {
+      if (window.electronAPI) window.electronAPI.toggleWalk();
+    });
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      if (window.electronAPI) window.electronAPI.showContextMenu();
+    });
+
+    // 窗口尺寸变化（跟随 VS Code resize）时，把鸭子夹回可视范围内（不复位到中间）
+    window.addEventListener('resize', () => {
+      const maxX = Math.max(0, stageW() - DUCK_W);
+      if (duckX > maxX) { duckX = maxX; duckEl.style.left = duckX + 'px'; }
+    });
+
+    // 鸭子 SVG 加载完后，用真实高度重新对齐脚踩顶边
+    if (emoji.complete) positionDuckVertically();
+    emoji.addEventListener('load', positionDuckVertically);
+
+    // 初始
+    positionDuckVertically();
+    centerDuck();
+    setState('idle');
+    console.log('[QuackCode] renderer initialized');
+  </script>
+</body>
+</html>

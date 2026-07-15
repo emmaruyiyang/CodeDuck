@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ELECTRON_MIRROR=\"https://npm.taobao.org/mirrors/electron/\" npm install electron --save-dev)",
+      "Bash(ELECTRON_MIRROR=\"https://cdn.npm.taobao.org/dist/electron/\" npm install electron --save-dev)",
+      "Bash(ELECTRON_MIRROR=\"https://npmmirror.com/mirrors/electron/\" npm install electron --save-dev)",
+      "Bash(ELECTRON_MIRROR=\"https://github.com/electron/electron/releases/download/\" npm install electron --save-dev)",
+      "Bash(npm config *)",
+      "Bash(curl -sI -m 10 https://github.com/electron/electron/releases/)",
+      "Bash(node -e \"console.log\\('electron 解析路径:', require\\('electron'\\)\\)\")",
+      "Bash(python3 -c ' *)",
+      "Bash(node -e \"const p=require\\('electron'\\); console.log\\(JSON.stringify\\(p\\)\\)\")",
+      "Bash(lsof -iTCP -sTCP:LISTEN -P -n)",
+      "Bash(curl -s -X POST http://127.0.0.1:58987/hook/prompt-submit -H 'Content-Type: application/json' -d '{}')",
+      "Bash(curl -s -X POST http://127.0.0.1:58987/hook/notify -H 'Content-Type: application/json' -d '{\"type\":\"permission_prompt\"}')",
+      "Bash(osascript -e 'tell application \"System Events\" *)",
+      "Bash(python3 -)",
+      "Bash(node --check /tmp/quack_renderer.js)",
+      "Bash(awk '{print $2, $11, $12, $13}')",
+      "Bash(ps -Ao pid,lstart,command)",
+      "Bash(python3 -c \"import re; h=open\\('renderer/index.html',encoding='utf-8'\\).read\\(\\); m=re.search\\(r'<script>\\(.*?\\)</script>',h,re.S\\); open\\('/tmp/q.js','w'\\).write\\(m.group\\(1\\)\\)\")",
+      "Bash(node --check /tmp/q.js)",
+      "Bash(python3 -c \"import re; h=open\\('renderer/index.html',encoding='utf-8'\\).read\\(\\); m=re.search\\(r'<script>\\(.*\\)</script>',h,re.S\\); open\\('/tmp/q.js','w'\\).write\\(m.group\\(1\\)\\)\")",
+      "Bash(sw_vers -productVersion)",
+      "Bash(python3 -c \"import time; print\\('开始，鸭子应在约2秒后拉屎...'\\); time.sleep\\(4\\); print\\('结束，鸭子应炸屎'\\)\")",
+      "Bash(python3 -c \"import time; print\\('卡住中，鸭子应拉屎...'\\); time.sleep\\(5\\); print\\('结束 → 应炸屎'\\)\")",
+      "Bash(file /Users/ruyiy/Documents/GitHub/CodeDuck/data/sound/*)"
+    ]
+  }
+}
