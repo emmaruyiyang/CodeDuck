@@ -8,11 +8,12 @@
   "author": "Ruyi Yang",
   "license": "MIT",
   "scripts": {
-    "compile": "esbuild ./src/main.ts ./src/preload.ts --bundle --outdir=dist --format=cjs --platform=node --target=node20 --external:electron",
+    "compile": "esbuild ./src/main.ts ./src/preload.ts --bundle --outdir=dist --format=cjs --platform=node --target=node20 --external:electron --external:uiohook-napi --external:node-gyp-build",
     "watch": "npm run compile -- --sourcemap --watch",
     "dev": "npm run compile && electron .",
     "build": "npm run compile -- --minify",
-    "dist": "npm run build && electron-builder --mac dmg"
+    "dist": "npm run build && electron-builder --mac dmg",
+    "sample:bad": "bash scripts/extract-bad-sample.sh"
   },
   "build": {
     "appId": "com.quackcode.app",
@@ -40,5 +41,8 @@
     "electron-builder": "^24.13.3",
     "esbuild": "^0.20.2",
     "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "uiohook-napi": "^1.5.5"
   }
 }
