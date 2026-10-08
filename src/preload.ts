@@ -13,6 +13,9 @@ contextBridge.exposeInMainWorld("electronAPI", {
   onMute: (callback: (muted: boolean) => void) => {
     ipcRenderer.on("mute", (event, m) => callback(m));
   },
+  onKeySound: (callback: (data: any) => void) => {
+    ipcRenderer.on("key-sound", (event, data) => callback(data));
+  },
   showContextMenu: () => {
     ipcRenderer.send("show-context-menu");
   },
