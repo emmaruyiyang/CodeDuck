@@ -247,6 +247,86 @@
     function playBoom()  { playSound(SOUND.boom); }  // 炸弹
     function playDone()  { playSound(SOUND.done); }  // 完成
 
+    // ================= 键盘音效 / She So Bad remix =================
+    const KEY_SOUND = {
+      duck: encodeURI('../data/sound/Squeeze a toy duck-sound.mp3'),
+      bomb: encodeURI('../data/sound/bomb-sound.mp3'),
+      poop: encodeURI('../data/sound/explosive-pupu-sound.mp3'),
+      gun: encodeURI('../data/sound/gun-sound.mp3'),
+      music: encodeURI('../data/music/she-so-bad.mp3'),
+    };
+
+    const keyboardRemix = {
+      ctx: null,
+      buffer: null,
+      loading: null,
+      chunkSec: 0.28,
+      gain: 0.82,
+    };
+
+    async function ensureRemixBuffer() {
+      if (keyboardRemix.buffer) return keyboardRemix.buffer;
+      if (keyboardRemix.loading) return keyboardRemix.loading;
+      keyboardRemix.loading = (async () => {
+        try {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (!Ctx) return null;
+          if (!keyboardRemix.ctx) keyboardRemix.ctx = new Ctx();
+          const res = await fetch(KEY_SOUND.music);
+          if (!res.ok) throw new Error('music sample missing');
+          const bytes = await res.arrayBuffer();
+          keyboardRemix.buffer = await keyboardRemix.ctx.decodeAudioData(bytes);
+          return keyboardRemix.buffer;
+        } catch (e) {
+          if (window.electronAPI) window.electronAPI.log('remix sample unavailable: ' + String(e));
+          return null;
+        }
+      })();
+      return keyboardRemix.loading;
+    }
+
+    function playFxForKey(keycode) {
+      // uiohook scan codes: Enter 0x1C, Space 0x39, Backspace 0x0E.
+      if (keycode === 0x001C) return playSound(KEY_SOUND.bomb, 0.85);
+      if (keycode === 0x0039) return playSound(KEY_SOUND.gun, 0.55);
+      if (keycode === 0x000E) return playSound(KEY_SOUND.poop, 0.8);
+      playSound(KEY_SOUND.duck, 0.45);
+    }
+
+    async function playMusicChunk(keycode) {
+      if (muted) return;
+      const buffer = await ensureRemixBuffer();
+      const ctx = keyboardRemix.ctx;
+      if (!buffer || !ctx) {
+        // First run before the local sample is generated still behaves usefully.
+        playFxForKey(keycode);
+        return;
+      }
+      if (ctx.state === 'suspended') {
+        try { await ctx.resume(); } catch {}
+      }
+
+      const chunk = Math.min(keyboardRemix.chunkSec, Math.max(0.08, buffer.duration / 4));
+      const slots = Math.max(1, Math.floor((buffer.duration - chunk) / chunk));
+      // Deterministic mapping: the same physical key always recalls the same micro-sample.
+      const slot = Math.abs((keycode * 17 + 11) % slots);
+      const offset = Math.min(slot * chunk, Math.max(0, buffer.duration - chunk));
+
+      const source = ctx.createBufferSource();
+      const gain = ctx.createGain();
+      source.buffer = buffer;
+      gain.gain.value = keyboardRemix.gain;
+      source.connect(gain);
+      gain.connect(ctx.destination);
+      source.start(0, offset, chunk);
+    }
+
+    function handleKeySound(data) {
+      if (!data || muted) return;
+      if (data.mode === 'fx') playFxForKey(data.keycode);
+      else if (data.mode === 'music') playMusicChunk(data.keycode);
+    }
+
     // ================= 行走（DOM 内水平移动 #duck） =================
     let duckX = 0;
     let walkRAF = null;
@@ -481,6 +561,9 @@
         positionDuckVertically(); // 顶边位置变化（窗口/全屏切换）→ 重新踩边
       });
       window.electronAPI.onMute((m) => { muted = m; });
+      if (window.electronAPI.onKeySound) {
+        window.electronAPI.onKeySound(handleKeySound);
+      }
     } else {
       document.title = 'QuackCode: electronAPI 缺失!';
       document.body.style.outline = '4px solid red';
