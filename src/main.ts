@@ -4,6 +4,7 @@ import { DuckStateMachine, DuckState } from "./stateMachine";
 import { QuackCodeServer } from "./server";
 import { HooksManager } from "./hooksManager";
 import { WindowTracker, WindowBounds } from "./windowTracker";
+import { uIOhook, UiohookKey } from "uiohook-napi";
 
 // 调试开关：设 ELECTRON_DEV=true 才开 DevTools 和详细日志
 const DEV = process.env.ELECTRON_DEV === "true";
@@ -24,6 +25,26 @@ let walkEnabled = true; // running 时是否“从左往右走”；false = 原�
 let muted = false; // 静音（托盘切换）
 let lastBounds: WindowBounds | null = null;
 let cleanedUp = false;
+let keySoundMode: "off" | "fx" | "music" = "music";
+let keyboardHookStarted = false;
+
+function sendKeySound(keycode: number) {
+  if (!mainWindow || muted || keySoundMode === "off") return;
+  mainWindow.webContents.send("key-sound", { keycode, mode: keySoundMode });
+}
+
+function startKeyboardHook() {
+  if (keyboardHookStarted) return;
+  uIOhook.on("keydown", (event: any) => sendKeySound(event.keycode));
+  uIOhook.start();
+  keyboardHookStarted = true;
+}
+
+function stopKeyboardHook() {
+  if (!keyboardHookStarted) return;
+  try { uIOhook.stop(); } catch {}
+  keyboardHookStarted = false;
+}
 
 // 鸭子头顶想要预留的空间（站在 VS Code 顶边“上方”，脚踩边缘）。
 // 不写死：渲染层按当前图标实测高度 + 跳跃高度算出所需值上报，随换图标自适应。
@@ -140,6 +161,14 @@ function refreshTrayMenu() {
       },
     },
     {
+      label: "键盘声音模式",
+      submenu: [
+        { label: "关闭", type: "radio", checked: keySoundMode === "off", click: () => { keySoundMode = "off"; refreshTrayMenu(); } },
+        { label: "音效", type: "radio", checked: keySoundMode === "fx", click: () => { keySoundMode = "fx"; refreshTrayMenu(); } },
+        { label: "She So Bad Remix", type: "radio", checked: keySoundMode === "music", click: () => { keySoundMode = "music"; refreshTrayMenu(); } },
+      ],
+    },
+    {
       label: "跟随 VS Code 窗口",
       type: "checkbox",
       checked: followEnabled,
@@ -159,6 +188,7 @@ function refreshTrayMenu() {
 function cleanup() {
   if (cleanedUp) return;
   cleanedUp = true;
+  stopKeyboardHook();
   try { if (tracker) tracker.stop(); } catch {}
   try { if (server) server.stop(); } catch {}
   try { if (hooksManager) hooksManager.removeHooks(); } catch {}
@@ -179,6 +209,7 @@ async function initializeApp() {
 app.on("ready", async () => {
   await initializeApp();
   await createWindow();
+  startKeyboardHook();
   createTray();
 });
 
@@ -215,6 +246,14 @@ ipcMain.on("show-context-menu", () => {
         if (mainWindow) mainWindow.webContents.send("mute", muted);
         refreshTrayMenu();
       },
+    },
+    {
+      label: "键盘声音模式",
+      submenu: [
+        { label: "关闭", type: "radio", checked: keySoundMode === "off", click: () => { keySoundMode = "off"; refreshTrayMenu(); } },
+        { label: "音效", type: "radio", checked: keySoundMode === "fx", click: () => { keySoundMode = "fx"; refreshTrayMenu(); } },
+        { label: "She So Bad Remix", type: "radio", checked: keySoundMode === "music", click: () => { keySoundMode = "music"; refreshTrayMenu(); } },
+      ],
     },
     { type: "separator" as const },
     { label: "退出 QuackCode", click: () => app.quit() },
