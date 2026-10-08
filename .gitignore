@@ -16,3 +16,7 @@ note
 .DS_Store
 .env
 .env.local
+
+# Local music samples (do not commit copyrighted audio)
+data/music/*.mp3
+data/music/*.wav
