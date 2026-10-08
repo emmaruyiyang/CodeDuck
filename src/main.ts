@@ -4,7 +4,7 @@ import { DuckStateMachine, DuckState } from "./stateMachine";
 import { QuackCodeServer } from "./server";
 import { HooksManager } from "./hooksManager";
 import { WindowTracker, WindowBounds } from "./windowTracker";
-import { uIOhook, UiohookKey } from "uiohook-napi";
+import { uIOhook } from "uiohook-napi";
 
 // 调试开关：设 ELECTRON_DEV=true 才开 DevTools 和详细日志
 const DEV = process.env.ELECTRON_DEV === "true";
