@@ -132,7 +132,7 @@ function refreshTrayMenu() {
   if (!tray) return;
   const menu = Menu.buildFromTemplate([
     {
-      label: muted ? "取消静音" : "静音",
+      label: muted ? "Unmute" : "Mute",
       click: () => {
         muted = !muted;
         if (mainWindow) mainWindow.webContents.send("mute", muted);
@@ -140,7 +140,7 @@ function refreshTrayMenu() {
       },
     },
     {
-      label: "跟随 VS Code 窗口",
+      label: "Follow VS Code Window",
       type: "checkbox",
       checked: followEnabled,
       click: () => {
@@ -150,7 +150,7 @@ function refreshTrayMenu() {
       },
     },
     { type: "separator" },
-    { label: "退出 QuackCode", click: () => app.quit() },
+    { label: "Quit QuackCode", click: () => app.quit() },
   ]);
   tray.setContextMenu(menu);
 }
@@ -201,7 +201,9 @@ app.on("activate", () => {
 ipcMain.on("show-context-menu", () => {
   const template = [
     {
-      label: followEnabled ? "✓ 跟随 VS Code 窗口" : "跟随 VS Code 窗口",
+      label: "Follow VS Code Window",
+      type: "checkbox" as const,
+      checked: followEnabled,
       click: () => {
         followEnabled = !followEnabled;
         if (followEnabled && lastBounds) syncWindowToBounds(lastBounds);
@@ -209,7 +211,7 @@ ipcMain.on("show-context-menu", () => {
       },
     },
     {
-      label: muted ? "取消静音" : "静音",
+      label: muted ? "Unmute" : "Mute",
       click: () => {
         muted = !muted;
         if (mainWindow) mainWindow.webContents.send("mute", muted);
@@ -217,7 +219,7 @@ ipcMain.on("show-context-menu", () => {
       },
     },
     { type: "separator" as const },
-    { label: "退出 QuackCode", click: () => app.quit() },
+    { label: "Quit QuackCode", click: () => app.quit() },
   ];
   const menu = Menu.buildFromTemplate(template as any);
   if (mainWindow) menu.popup({ window: mainWindow });
