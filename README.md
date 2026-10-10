@@ -1,5 +1,7 @@
 # QuackCode 🦆
 
+🌐 **官网 / 下载：https://www.ruyiyang.com/CodeDuck/**
+
 一只陪你写代码的悬浮小鸭子 —— 挂在 VS Code 窗口上沿，把 **Claude Code** 的实时状态"翻译"成看得见、听得见的动画：
 
 - **Claude 在干活** → 鸭子从左往右**走**
