@@ -21,7 +21,8 @@
     "files": [
       "dist/**/*",
       "renderer/**/*",
-      "data/**/*",
+      "data/img/**/*",
+      "data/sound/**/*",
       "package.json"
     ],
     "mac": {
