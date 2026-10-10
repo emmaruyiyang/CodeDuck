@@ -13,7 +13,7 @@
 
 ## 环境要求
 
-- **macOS**（目前仅支持 macOS，Apple Silicon / arm64）
+- **macOS 12+**（Apple Silicon 和 Intel 都支持）
 - 已安装 **[Claude Code](https://claude.com/claude-code)** —— QuackCode 就是配合它工作的
 - 需要授予 **辅助功能** 权限（用于跟随 VS Code 窗口）
 
@@ -21,14 +21,14 @@
 
 ## 安装（用户版）
 
-1. 下载 `QuackCode-x.y.z-arm64.dmg`
+1. 下载 DMG：M 系列芯片用 `QuackCode-arm64.dmg`，Intel Mac 用 `QuackCode-x64.dmg`
 2. 双击打开，把 **QuackCode** 拖进「应用程序」
-3. **首次打开**：在「应用程序」里 **右键 QuackCode → 打开**（未签名，需绕过一次 Gatekeeper）
+3. **首次打开**：App 没有 Apple 开发者签名，第一次会被拦截。到 系统设置 → 隐私与安全性，往下找到 QuackCode，点「仍要打开」（macOS 14 及更早也可以在「应用程序」里 右键 → 打开）
    - 如提示"已损坏 / 无法验证开发者"，打开「终端」运行：
      ```bash
      xattr -cr /Applications/QuackCode.app
      ```
-     然后再右键打开。
+     然后再打开。
 4. **授予辅助功能权限**：系统设置 → 隐私与安全性 → **辅助功能** → 打开 **QuackCode** 的开关
    （没有这一步鸭子不会跟随 VS Code 窗口）
 5. 从菜单栏 🦆 的「退出 QuackCode」完全退出后重开一次，让权限生效
@@ -61,7 +61,7 @@
 - **鸭子不跟随 / 不出现** → 多半是没授辅助功能权限。到 系统设置 → 隐私与安全性 → 辅助功能 打开 QuackCode，然后从菜单栏 🦆 退出重开。
 - **没有声音** → 从菜单栏 🦆 确认没开「静音」；声音文件在 App 内的 `data/sound/`。
 - **多开 VS Code 时鸭子跟哪个** → 跟你**当前聚焦**的那个主窗口。
-- **打开时被系统拦** → 见安装第 3 步（右键打开 / `xattr -cr`）。
+- **打开时被系统拦** → 见安装第 3 步（「仍要打开」/ `xattr -cr`）。
 - **想彻底移除** → 菜单栏 🦆 退出，删除 `/Applications/QuackCode.app`。hook 配置会在正常退出时自动清理；若有残留可手动编辑 `~/.claude/settings.json` 删掉带 `quackcode-hook` 标记的条目。
 
 ---
@@ -72,7 +72,7 @@
 npm install          # 装依赖
 npm run dev          # 编译并启动（开发模式）
 ELECTRON_DEV=true npm run dev   # 开 DevTools + 详细日志
-npm run dist         # 打包成 release/QuackCode-*.dmg
+npm run dist         # 打包成 release/QuackCode-arm64.dmg 和 QuackCode-x64.dmg
 ```
 
 ### 架构
@@ -102,14 +102,16 @@ Electron 遮罩窗口（覆盖 VS Code）+ 渲染层（鸭子/💩/爆炸/音效
 
 ### 打包配置
 
-在 `package.json` 的 `build` 字段（electron-builder）。自定义 App 图标：放一个 ≥512×512 的 `build/icon.png` 再 `npm run dist`。
+在 `package.json` 的 `build` 字段（electron-builder）。App 图标是 `build/icon.png`（1024×1024）。没有 Developer ID 证书，`build/adhoc-sign.js` 会在打包后做 ad-hoc 签名，避免下载后被报「已损坏」。
+
+落地页在 `docs/`（可直接用 GitHub Pages 部署）。
 
 ---
 
 ## 已知限制
 
-- 仅 macOS / arm64（Intel 需另出 universal 包；Windows/Linux 暂不支持）
-- 未代码签名（首次打开需右键放行）
+- 仅 macOS（Windows/Linux 暂不支持）
+- 只有 ad-hoc 签名、未经 Apple 公证（首次打开需在系统设置里「仍要打开」；每次更新版本后可能需要重新授权辅助功能）
 - 固定端口 37917（被占用时暂无自动切换）
 - 「工具卡住 >2s = 等待」是启发式，长时间的自动命令可能误触发拉屎
 

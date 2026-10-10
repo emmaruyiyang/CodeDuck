@@ -4,7 +4,7 @@
   "description": "An adorable duck companion for Claude Code - floats on top, bounces, quacks, and poops when waiting",
   "version": "0.1.0",
   "main": "dist/main.js",
-  "homepage": "https://github.com/ruyiy/CodeDuck",
+  "homepage": "https://github.com/emmaruyiyang/CodeDuck",
   "author": "Ruyi Yang",
   "license": "MIT",
   "scripts": {
@@ -12,7 +12,7 @@
     "watch": "npm run compile -- --sourcemap --watch",
     "dev": "npm run compile && electron .",
     "build": "npm run compile -- --minify",
-    "dist": "npm run build && electron-builder --mac dmg"
+    "dist": "npm run build && electron-builder --mac && rm -rf release/mac release/mac-arm64 release/.icon-icns release/*.blockmap release/*.yml"
   },
   "build": {
     "appId": "com.quackcode.app",
@@ -27,13 +27,25 @@
     ],
     "mac": {
       "target": [
-        "dmg"
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
       ],
-      "category": "public.app-category.developer-tools"
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.png",
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "artifactName": "${productName}-${arch}.${ext}",
+      "identity": null
     },
     "directories": {
       "output": "release"
-    }
+    },
+    "afterPack": "build/adhoc-sign.js"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

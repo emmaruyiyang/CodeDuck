@@ -1,240 +1,199 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>QuackCode 🦆 — 陪你写代码的悬浮小鸭子</title>
-<meta name="description" content="一只挂在 VS Code 窗口上沿的悬浮小鸭子，把 Claude Code 的实时状态变成看得见、听得见的动画。" />
+<title>QuackCode</title>
+<meta name="description" content="A floating duck that sits on top of your VS Code window and turns Claude Code's live status into animations you can see and hear." />
+<link rel="icon" href="icon.png" />
 <style>
   :root {
-    --duck: #ffc93c;
-    --duck-deep: #f5a623;
+    --bg: #fffaf0;
     --ink: #1c1b22;
     --muted: #6b6a73;
-    --cream: #fff8ec;
-    --card: #ffffff;
-    --editor: #1e1e2e;
-    --editor-bar: #2a2a3c;
-    --accent: #7c5cff;
-    --line: #efe7d6;
+    --line: #efe5cf;
+    --duck: #ffc93c;
+    --duck-deep: #f5a623;
+    --btn-ink: #3a2c00;
+    --surface: #ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17161c;
+      --ink: #f3f1ea;
+      --muted: #a09ea8;
+      --line: #2d2b35;
+      --surface: #201f27;
+    }
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-    color: var(--ink);
-    background: var(--cream);
-    line-height: 1.6;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }
   a { color: inherit; }
-  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
 
-  /* Nav */
-  nav {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 20px 24px; max-width: 1040px; margin: 0 auto;
+  nav { display: flex; justify-content: space-between; align-items: center; padding: 22px 0; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+  .brand img { width: 32px; height: 32px; }
+  nav a.gh { color: var(--muted); text-decoration: none; font-size: 15px; }
+  nav a.gh:hover { color: var(--ink); }
+  .nav-right { display: flex; align-items: center; gap: 18px; }
+  .lang { display: flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--surface); }
+  .lang button {
+    border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600;
+    padding: 3px 11px; border-radius: 999px; cursor: pointer;
   }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; }
-  .brand .logo { font-size: 26px; }
-  .nav-links { display: flex; gap: 22px; align-items: center; font-size: 15px; color: var(--muted); }
-  .nav-links a { text-decoration: none; }
-  .nav-links a:hover { color: var(--ink); }
+  .lang button[aria-pressed="true"] { background: var(--duck); color: var(--btn-ink); }
 
-  /* Hero */
-  .hero { text-align: center; padding: 56px 0 24px; }
-  .badge {
-    display: inline-block; background: #fff3d1; color: var(--duck-deep);
-    border: 1px solid #f2dd9e; border-radius: 999px; padding: 5px 14px;
-    font-size: 13px; font-weight: 600; margin-bottom: 22px;
-  }
-  .hero h1 { font-size: 52px; line-height: 1.12; letter-spacing: -1px; margin-bottom: 18px; }
-  .hero h1 .hl { color: var(--duck-deep); }
-  .hero p.sub { font-size: 19px; color: var(--muted); max-width: 620px; margin: 0 auto 30px; }
-
-  .cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; align-items: center; }
+  .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; padding: 48px 0 72px; }
+  h1 { font-size: 48px; line-height: 1.15; letter-spacing: -.5px; margin-bottom: 18px; }
+  h1 span { color: var(--duck-deep); }
+  .sub { font-size: 18px; color: var(--muted); margin-bottom: 32px; max-width: 460px; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; }
   .btn {
-    display: inline-flex; align-items: center; gap: 9px;
-    padding: 14px 26px; border-radius: 14px; font-weight: 700; font-size: 16px;
-    text-decoration: none; transition: transform .12s ease, box-shadow .12s ease;
+    display: inline-flex; flex-direction: column; padding: 12px 22px; border-radius: 12px;
+    text-decoration: none; font-weight: 700; font-size: 16px; line-height: 1.3;
+    transition: transform .12s ease;
   }
-  .btn-primary {
-    background: linear-gradient(180deg, var(--duck) 0%, var(--duck-deep) 100%);
-    color: #3a2c00; box-shadow: 0 8px 22px rgba(245,166,35,.38);
+  .btn small { font-weight: 500; font-size: 12px; opacity: .75; }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-primary { background: linear-gradient(180deg, var(--duck), var(--duck-deep)); color: var(--btn-ink); }
+  .btn-ghost { border: 1px solid var(--line); background: var(--surface); }
+  .meta { margin-top: 16px; font-size: 13px; color: var(--muted); }
+  .shot img {
+    width: 100%; display: block; border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.22);
   }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(245,166,35,.48); }
-  .btn-ghost { background: #fff; border: 1px solid var(--line); color: var(--ink); }
-  .btn-ghost:hover { transform: translateY(-2px); }
-  .meta { margin-top: 14px; font-size: 13px; color: var(--muted); }
 
-  /* Live demo: 鸭子在 VS Code 顶边走 + 拉屎 */
-  .demo { margin: 46px auto 10px; max-width: 760px; }
-  .editor {
-    position: relative; background: var(--editor); border-radius: 14px;
-    box-shadow: 0 24px 60px rgba(28,27,34,.28); overflow: hidden;
-  }
-  .titlebar {
-    position: relative; height: 44px; background: var(--editor-bar);
-    display: flex; align-items: center; padding: 0 16px; gap: 8px;
-  }
-  .dot { width: 12px; height: 12px; border-radius: 50%; }
-  .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
-  .tabname { margin-left: 14px; color: #b7b7c9; font-size: 13px; }
-  /* 走在标题栏“上沿”的鸭子 */
-  .walker {
-    position: absolute; top: -34px; left: 0; font-size: 40px;
-    animation: walk 7s linear infinite;
-  }
-  .walker .d { display: inline-block; animation: hop .4s ease-in-out infinite; }
-  @keyframes walk { 0% { left: 4%; } 100% { left: 88%; } }
-  @keyframes hop { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-  /* 掉落的💩 */
-  .poo { position: absolute; top: 40px; font-size: 22px; opacity: 0; animation: fall 7s linear infinite; }
-  @keyframes fall {
-    0%, 62% { opacity: 0; }
-    64% { opacity: 1; top: 46px; }
-    100% { opacity: .15; top: 250px; }
-  }
-  .code { padding: 20px 22px 30px; font-family: "SF Mono", Menlo, monospace; font-size: 13.5px; color: #cfcfe6; min-height: 220px; }
-  .code .c1 { color: #7c86b8; } .code .k { color: #c792ea; } .code .s { color: #c3e88d; } .code .f { color: #82aaff; }
-  .code .row { white-space: pre; }
+  section { padding: 56px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: 26px; margin-bottom: 28px; }
+  .states { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .state { padding: 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+  .state .ic { font-size: 26px; margin-bottom: 8px; }
+  .state b { display: block; margin-bottom: 4px; }
+  .state p { font-size: 14px; color: var(--muted); }
 
-  /* Features */
-  section.block { padding: 40px 0; }
-  h2.title { text-align: center; font-size: 30px; margin-bottom: 8px; letter-spacing: -.5px; }
-  p.lead { text-align: center; color: var(--muted); margin-bottom: 32px; }
-  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-  .card {
-    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
-    padding: 22px 18px; text-align: center;
-  }
-  .card .ic { font-size: 40px; margin-bottom: 10px; }
-  .card h3 { font-size: 16px; margin-bottom: 6px; }
-  .card p { font-size: 13.5px; color: var(--muted); }
-
-  /* Steps */
-  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; counter-reset: s; }
-  .step {
-    background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px 18px; position: relative;
-  }
-  .step::before {
-    counter-increment: s; content: counter(s);
+  ol { list-style: none; counter-reset: s; display: grid; gap: 14px; max-width: 680px; }
+  ol li { counter-increment: s; display: flex; gap: 14px; align-items: baseline; }
+  ol li::before {
+    content: counter(s); flex: none; width: 26px; height: 26px; border-radius: 50%;
+    background: var(--duck); color: var(--btn-ink); font-weight: 700; font-size: 14px;
     display: inline-flex; align-items: center; justify-content: center;
-    width: 30px; height: 30px; border-radius: 50%;
-    background: var(--duck); color: #3a2c00; font-weight: 800; margin-bottom: 12px;
   }
-  .step h3 { font-size: 15px; margin-bottom: 6px; }
-  .step p { font-size: 13px; color: var(--muted); }
-  .step code { background: #f3ecdb; padding: 1px 6px; border-radius: 6px; font-size: 12px; }
+  code { font-family: ui-monospace, Menlo, monospace; font-size: 13px; background: var(--surface); border: 1px solid var(--line); padding: 1px 6px; border-radius: 6px; }
 
-  /* Note */
-  .note {
-    background: #fff3d1; border: 1px solid #f2dd9e; border-radius: 16px;
-    padding: 20px 22px; color: #6b5410; font-size: 14px; max-width: 760px; margin: 0 auto;
-  }
-  .note b { color: #5a4400; }
+  footer { padding: 32px 0 48px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); }
 
-  footer { text-align: center; color: var(--muted); font-size: 13px; padding: 40px 0 50px; }
-
-  @media (max-width: 760px) {
-    .hero h1 { font-size: 36px; }
-    .grid, .steps { grid-template-columns: repeat(2, 1fr); }
-    .nav-links { display: none; }
+  @media (max-width: 800px) {
+    .hero { grid-template-columns: 1fr; gap: 40px; padding-top: 24px; }
+    h1 { font-size: 36px; }
+    .states { grid-template-columns: repeat(2, 1fr); }
+    .wrap { padding: 0 16px; }
   }
 </style>
 </head>
 <body>
-  <nav>
-    <div class="brand"><span class="logo">🦆</span> QuackCode</div>
-    <div class="nav-links">
-      <a href="#features">功能</a>
-      <a href="#install">安装</a>
-      <a href="https://github.com/ruyiy/CodeDuck" target="_blank" rel="noopener">GitHub</a>
-    </div>
-  </nav>
-
-  <header class="hero wrap">
-    <span class="badge">🖥️ macOS · 配合 Claude Code</span>
-    <h1>陪你写代码的<br><span class="hl">悬浮小鸭子</span></h1>
-    <p class="sub">
-      QuackCode 挂在 VS Code 窗口上沿，把 <b>Claude Code</b> 的实时状态变成动画：
-      干活时往前走，等你时拉屎 💩，你一回应就用炸弹炸开 💥。
-    </p>
-    <div class="cta">
-      <a class="btn btn-primary" href="https://github.com/ruyiy/CodeDuck/releases/latest" target="_blank" rel="noopener">
-        ⬇️ 下载 QuackCode（.dmg）
-      </a>
-      <a class="btn btn-ghost" href="https://github.com/ruyiy/CodeDuck" target="_blank" rel="noopener">
-        查看源码
-      </a>
-    </div>
-    <div class="meta">macOS 12+ · Apple Silicon · 需已安装 Claude Code · 免费开源</div>
-
-    <!-- Live demo -->
-    <div class="demo">
-      <div class="editor">
-        <div class="titlebar">
-          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
-          <span class="tabname">main.py — your-project</span>
-          <span class="walker"><span class="d">🦆</span></span>
-          <span class="poo">💩</span>
+  <div class="wrap">
+    <nav>
+      <div class="brand"><img src="icon.png" alt="" /> QuackCode</div>
+      <div class="nav-right">
+        <div class="lang" role="group" aria-label="Language">
+          <button type="button" data-lang="en" aria-pressed="true">EN</button>
+          <button type="button" data-lang="zh" aria-pressed="false">中文</button>
         </div>
-        <div class="code">
-          <div class="row"><span class="c1"># Claude 正在帮你重构…</span></div>
-          <div class="row"><span class="k">def</span> <span class="f">refactor</span>(code):</div>
-          <div class="row">    <span class="k">return</span> <span class="s">"✨ cleaner code"</span></div>
-          <div class="row">&nbsp;</div>
-          <div class="row"><span class="c1"># 鸭子在上面走 → 需要你确认时会停下拉屎</span></div>
+        <a class="gh" href="https://github.com/emmaruyiyang/CodeDuck" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </nav>
+
+    <header class="hero">
+      <div>
+        <h1 data-i18n="title">A little duck that<br><span>codes with you</span></h1>
+        <p class="sub" data-i18n="sub">It perches on top of your VS Code window and keeps an eye on Claude Code: walks while Claude works, poops 💩 when it's waiting on you, and blows it all up 💥 the moment you reply.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="https://github.com/emmaruyiyang/CodeDuck/releases/latest/download/QuackCode-arm64.dmg" data-i18n="dlArm">
+            Download for Mac<small>Apple Silicon (M-series)</small>
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/emmaruyiyang/CodeDuck/releases/latest/download/QuackCode-x64.dmg" data-i18n="dlIntel">
+            Intel version<small>Pre-2020 Macs</small>
+          </a>
         </div>
+        <p class="meta" data-i18n="meta">macOS 12+ · Requires Claude Code · Free &amp; open source</p>
       </div>
-    </div>
-  </header>
+      <div class="shot"><img src="screenshot.jpg" data-i18n-alt="alt" alt="The duck standing on the top edge of a VS Code window while poop explodes below" /></div>
+    </header>
+  </div>
 
-  <section class="block wrap" id="features">
-    <h2 class="title">一眼看懂 Claude 在干嘛</h2>
-    <p class="lead">四个状态，看得见、听得见，不用一直盯着终端</p>
-    <div class="grid">
-      <div class="card"><div class="ic">🏃</div><h3>运行</h3><p>Claude 干活时，鸭子从左往右走</p></div>
-      <div class="card"><div class="ic">💩</div><h3>等你</h3><p>问你问题 / 权限确认时，停下拉屎 + 鸭叫</p></div>
-      <div class="card"><div class="ic">💥</div><h3>引爆</h3><p>你一回应，炸弹把屎炸开，整屏爆炸</p></div>
-      <div class="card"><div class="ic">✨</div><h3>完成</h3><p>一轮结束，心满意足叫一声</p></div>
-    </div>
-  </section>
-
-  <section class="block wrap" id="install">
-    <h2 class="title">三步装好</h2>
-    <p class="lead">下载后大约 1 分钟即可开始</p>
-    <div class="steps">
-      <div class="step">
-        <h3>下载并拖入</h3>
-        <p>打开 .dmg，把 QuackCode 拖进「应用程序」</p>
-      </div>
-      <div class="step">
-        <h3>右键打开</h3>
-        <p>首次在「应用程序」里 <b>右键 → 打开</b> 放行（未签名）</p>
-      </div>
-      <div class="step">
-        <h3>授权辅助功能</h3>
-        <p>系统设置 → 隐私与安全性 → <b>辅助功能</b>，打开 QuackCode</p>
-      </div>
-      <div class="step">
-        <h3>开始使用</h3>
-        <p>打开 VS Code 用 Claude Code，鸭子自动出现在窗口上沿</p>
+  <section>
+    <div class="wrap">
+      <h2 data-i18n="statesTitle">Stop staring at the terminal</h2>
+      <div class="states">
+        <div class="state"><div class="ic">🏃</div><b data-i18n="s1">Working</b><p data-i18n="s1d">Claude is running — the duck walks left to right</p></div>
+        <div class="state"><div class="ic">💩</div><b data-i18n="s2">Waiting on you</b><p data-i18n="s2d">Needs your approval or answer — it stops, poops, and quacks</p></div>
+        <div class="state"><div class="ic">💥</div><b data-i18n="s3">Boom</b><p data-i18n="s3d">You reply, and a bomb blasts the poop away</p></div>
+        <div class="state"><div class="ic">✨</div><b data-i18n="s4">Done</b><p data-i18n="s4d">Turn finished — one happy quack</p></div>
       </div>
     </div>
   </section>
 
-  <section class="block wrap">
-    <div class="note">
-      ⚠️ <b>关于"未签名"提示</b>：当前版本未做 Apple 代码签名，首次打开需 <b>右键 → 打开</b>。
-      若提示"已损坏 / 无法验证开发者"，在「终端」运行
-      <code>xattr -cr /Applications/QuackCode.app</code> 后再打开即可。
-      需要授予「辅助功能」权限，鸭子才能跟随 VS Code 窗口。
+  <section>
+    <div class="wrap">
+      <h2 data-i18n="installTitle">Install</h2>
+      <ol>
+        <li><span data-i18n="i1">Open the .dmg and drag QuackCode into Applications</span></li>
+        <li><span data-i18n="i2">If macOS blocks it on first launch: System Settings → Privacy &amp; Security → scroll down to QuackCode and click “Open Anyway”.<br>If it says the app is “damaged”, run <code>xattr -cr /Applications/QuackCode.app</code> in Terminal</span></li>
+        <li><span data-i18n="i3">System Settings → Privacy &amp; Security → Accessibility, turn on QuackCode, then quit from the 🦆 menu bar icon and reopen</span></li>
+        <li><span data-i18n="i4">Open VS Code and use Claude Code as usual — the duck shows up on its own</span></li>
+      </ol>
     </div>
   </section>
 
   <footer>
-    🦆 QuackCode · MIT License · 一个陪你写代码的周末小项目
+    <div class="wrap">MIT License · Made by Ruyi Yang</div>
   </footer>
+
+<script>
+  const ZH = {
+    title: '陪你写代码的<br><span>悬浮小鸭子</span>',
+    sub: '鸭子挂在 VS Code 窗口上沿，替你盯着 Claude Code：干活时往前走，等你回复就拉屎 💩，你一回应就炸开 💥。',
+    dlArm: '下载 for Mac<small>Apple Silicon（M 系列芯片）</small>',
+    dlIntel: 'Intel 版<small>2020 年前的 Mac</small>',
+    meta: 'macOS 12+ · 需已安装 Claude Code · 免费开源',
+    alt: '鸭子站在 VS Code 窗口上沿，下方💩被炸开',
+    statesTitle: '不用一直盯着终端',
+    s1: '干活中', s1d: 'Claude 在跑，鸭子从左往右走',
+    s2: '等你', s2d: '要你确认或回答时，停下拉屎 + 鸭叫',
+    s3: '引爆', s3d: '你一回应，炸弹把屎炸开',
+    s4: '完成', s4d: '一轮结束，鸭子叫一声',
+    installTitle: '安装',
+    i1: '打开 .dmg，把 QuackCode 拖进「应用程序」',
+    i2: '首次打开被拦截时：系统设置 → 隐私与安全性 → 往下找到 QuackCode，点「仍要打开」。<br>如果提示「已损坏」，在终端运行 <code>xattr -cr /Applications/QuackCode.app</code>',
+    i3: '系统设置 → 隐私与安全性 → 辅助功能，打开 QuackCode，然后从菜单栏 🦆 退出重开',
+    i4: '打开 VS Code 正常用 Claude Code，鸭子会自动出现',
+  };
+
+  // 英文写在 HTML 里作为默认，加载时存一份，切回英文时用
+  const EN = {};
+  document.querySelectorAll('[data-i18n]').forEach(el => { EN[el.dataset.i18n] = el.innerHTML; });
+  document.querySelectorAll('[data-i18n-alt]').forEach(el => { EN[el.dataset.i18nAlt] = el.alt; });
+
+  function setLang(lang) {
+    const dict = lang === 'zh' ? ZH : EN;
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = dict[el.dataset.i18n]; });
+    document.querySelectorAll('[data-i18n-alt]').forEach(el => { el.alt = dict[el.dataset.i18nAlt]; });
+    document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === lang));
+    try { localStorage.setItem('quackcode-lang', lang); } catch (e) {}
+  }
+
+  document.querySelectorAll('.lang button').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
+
+  // 优先级：?lang=zh 链接参数 > 上次的选择 > 默认英文
+  let initial = new URLSearchParams(location.search).get('lang');
+  if (!initial) { try { initial = localStorage.getItem('quackcode-lang'); } catch (e) {} }
+  if (initial === 'zh') setLang('zh');
+</script>
 </body>
 </html>
