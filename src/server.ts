@@ -2,11 +2,11 @@ import * as http from "http";
 import { DuckStateMachine, HookPayload } from "./stateMachine";
 
 // 固定端口：让注入到 ~/.claude/settings.json 的 hook 命令跨重启保持有效
-export const QUACKCODE_PORT = 37917;
+export const CODEDUCK_PORT = 37917;
 
-export class QuackCodeServer {
+export class CodeDuckServer {
   private server: http.Server | null = null;
-  private port: number = QUACKCODE_PORT;
+  private port: number = CODEDUCK_PORT;
   private stateMachine: DuckStateMachine;
 
   constructor(stateMachine: DuckStateMachine) {
@@ -41,7 +41,7 @@ export class QuackCodeServer {
               res.writeHead(200, { "Content-Type": "application/json" });
               res.end(JSON.stringify({ ok: true }));
             } catch (error) {
-              console.error("[QuackCode] Error parsing hook payload:", error);
+              console.error("[CodeDuck] Error parsing hook payload:", error);
               res.writeHead(400, { "Content-Type": "application/json" });
               res.end(JSON.stringify({ error: "Invalid JSON" }));
             }
@@ -55,14 +55,14 @@ export class QuackCodeServer {
         }
       });
 
-      this.server.listen(QUACKCODE_PORT, "127.0.0.1", () => {
-        this.port = QUACKCODE_PORT;
-        console.log(`[QuackCode] Hook server listening on http://127.0.0.1:${this.port}`);
+      this.server.listen(CODEDUCK_PORT, "127.0.0.1", () => {
+        this.port = CODEDUCK_PORT;
+        console.log(`[CodeDuck] Hook server listening on http://127.0.0.1:${this.port}`);
         resolve(this.port);
       });
 
       this.server.on("error", (error) => {
-        console.error("[QuackCode] Server error:", error);
+        console.error("[CodeDuck] Server error:", error);
         reject(error);
       });
     });
@@ -71,7 +71,7 @@ export class QuackCodeServer {
   stop() {
     if (this.server) {
       this.server.close();
-      console.log("[QuackCode] Hook server stopped");
+      console.log("[CodeDuck] Hook server stopped");
     }
   }
 
@@ -88,7 +88,7 @@ export class QuackCodeServer {
     } else if (url.includes("stop")) {
       this.stateMachine.handleHookEvent("Stop", payload);
     } else {
-      console.warn(`[QuackCode] Unknown hook URL: ${url}`);
+      console.warn(`[CodeDuck] Unknown hook URL: ${url}`);
     }
   }
 

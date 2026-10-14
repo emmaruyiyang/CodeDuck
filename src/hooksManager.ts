@@ -3,7 +3,9 @@ import * as path from "path";
 import * as os from "os";
 
 // 我们自己 hook 命令里的标记，用于识别/清理，避免误删用户的 hooks
-const MARKER = "quackcode-hook";
+const MARKER = "codeduck-hook";
+// 改名前（QuackCode）写入的标记，仍识别以便清理旧条目
+const LEGACY_MARKERS = ["quackcode-hook"];
 
 // 事件 → 本地 server 路由
 const EVENT_ROUTES: Record<string, string> = {
@@ -23,7 +25,7 @@ export class HooksManager {
   }
 
   // command 型 hook：curl 把事件（连同 stdin JSON）POST 给本地 server。
-  // 末尾 `# quackcode-hook` 作为标记，便于只清理我们自己的条目。
+  // 末尾 `# codeduck-hook` 作为标记，便于只清理我们自己的条目。
   private commandHook(port: number, route: string) {
     const url = `http://127.0.0.1:${port}/hook/${route}`;
     const cmd = `curl -s -m 2 -X POST '${url}' -H 'Content-Type: application/json' -d @- >/dev/null 2>&1 || true # ${MARKER}`;
@@ -35,7 +37,7 @@ export class HooksManager {
       entry &&
       Array.isArray(entry.hooks) &&
       entry.hooks.some(
-        (h: any) => typeof h.command === "string" && h.command.includes(MARKER)
+        (h: any) => typeof h.command === "string" && [MARKER, ...LEGACY_MARKERS].some((m) => h.command.includes(m))
       )
     );
   }
@@ -54,10 +56,10 @@ export class HooksManager {
       }
 
       this.saveSettings(settings);
-      console.log("[QuackCode] Hooks 已合并注入:", this.claudeSettingsPath);
+      console.log("[CodeDuck] Hooks 已合并注入:", this.claudeSettingsPath);
       return true;
     } catch (error) {
-      console.error("[QuackCode] Failed to inject hooks:", error);
+      console.error("[CodeDuck] Failed to inject hooks:", error);
       return false;
     }
   }
@@ -76,10 +78,10 @@ export class HooksManager {
       }
 
       this.saveSettings(settings);
-      console.log("[QuackCode] Hooks 已移除（仅自身）");
+      console.log("[CodeDuck] Hooks 已移除（仅自身）");
       return true;
     } catch (error) {
-      console.error("[QuackCode] Failed to remove hooks:", error);
+      console.error("[CodeDuck] Failed to remove hooks:", error);
       return false;
     }
   }
@@ -91,7 +93,7 @@ export class HooksManager {
         return JSON.parse(content);
       }
     } catch (error) {
-      console.warn("[QuackCode] 读取 settings.json 失败，将新建");
+      console.warn("[CodeDuck] 读取 settings.json 失败，将新建");
     }
     return {};
   }

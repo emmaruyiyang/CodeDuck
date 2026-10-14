@@ -22,7 +22,7 @@ export class DuckStateMachine {
   private waitingStartTime: number = 0;
 
   constructor() {
-    console.log("[QuackCode] State Machine initialized. Initial state:", DuckState.Idle);
+    console.log("[CodeDuck] State Machine initialized. Initial state:", DuckState.Idle);
   }
 
   // 普通工具 PreToolUse 后启动计时；迟迟不结束视为在等你批准权限 → 进入等待（拉屎）
@@ -50,14 +50,14 @@ export class DuckStateMachine {
 
   private setState(newState: DuckState, data?: any) {
     if (this.currentState !== newState) {
-      console.log(`[QuackCode] State transition: ${this.currentState} → ${newState}`, data || "");
+      console.log(`[CodeDuck] State transition: ${this.currentState} → ${newState}`, data || "");
       this.currentState = newState;
       this.listeners.forEach((cb) => cb(newState, data));
     }
   }
 
   handleHookEvent(hookType: string, payload: HookPayload) {
-    console.log(`[QuackCode] Hook event: ${hookType}`, payload);
+    console.log(`[CodeDuck] Hook event: ${hookType}`, payload);
 
     switch (hookType) {
       case "UserPromptSubmit":
@@ -137,7 +137,7 @@ export class DuckStateMachine {
         break;
 
       default:
-        console.warn(`[QuackCode] Unknown hook event: ${hookType}`);
+        console.warn(`[CodeDuck] Unknown hook event: ${hookType}`);
     }
   }
 

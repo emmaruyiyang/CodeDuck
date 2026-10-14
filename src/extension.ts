@@ -1,22 +1,22 @@
 import * as vscode from "vscode";
 import { DuckStateMachine, DuckState } from "./stateMachine";
-import { QuackCodeServer } from "./server";
+import { CodeDuckServer } from "./server";
 import { HooksManager } from "./hooksManager";
 
 let stateMachine: DuckStateMachine;
-let server: QuackCodeServer;
+let server: CodeDuckServer;
 let hooksManager: HooksManager;
 let panel: vscode.WebviewPanel | undefined;
 
 export async function activate(context: vscode.ExtensionContext) {
-  console.log("[QuackCode] Extension activated!");
+  console.log("[CodeDuck] Extension activated!");
 
   // 初始化核心模块
   stateMachine = new DuckStateMachine();
   hooksManager = new HooksManager();
 
   // 启动 HTTP server
-  server = new QuackCodeServer(stateMachine);
+  server = new CodeDuckServer(stateMachine);
   const port = await server.start();
 
   // 注入 hooks
@@ -24,20 +24,20 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // 监听状态变化
   stateMachine.onStateChange((state: DuckState, data?: any) => {
-    console.log(`[QuackCode] Duck state changed to: ${state}`, data);
+    console.log(`[CodeDuck] Duck state changed to: ${state}`, data);
     updateWebview(state, data);
   });
 
   // 注册命令：切换静音
   context.subscriptions.push(
-    vscode.commands.registerCommand("quackcode.mute", () => {
-      vscode.window.showInformationMessage("QuackCode: Mute toggled (TODO)");
+    vscode.commands.registerCommand("codeduck.mute", () => {
+      vscode.window.showInformationMessage("CodeDuck: Mute toggled (TODO)");
     })
   );
 
   // 注册命令：创建/显示鸭子面板
   context.subscriptions.push(
-    vscode.commands.registerCommand("quackcode.show", () => {
+    vscode.commands.registerCommand("codeduck.show", () => {
       showDuckPanel(context);
     })
   );
@@ -61,8 +61,8 @@ async function showDuckPanel(context: vscode.ExtensionContext) {
   }
 
   panel = vscode.window.createWebviewPanel(
-    "quackcode",
-    "🦆 QuackCode",
+    "codeduck",
+    "🦆 CodeDuck",
     vscode.ViewColumn.Two,
     {
       enableScripts: true,
@@ -105,7 +105,7 @@ function getWebviewContent(): string {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>QuackCode Duck</title>
+      <title>CodeDuck Duck</title>
       <style>
         * { box-sizing: border-box; }
 
@@ -329,7 +329,7 @@ function getWebviewContent(): string {
     </head>
     <body>
       <div class="container">
-        <h1>🦆 QuackCode</h1>
+        <h1>🦆 CodeDuck</h1>
 
         <div class="duck-area">
           <div class="duck" id="duck">🦆</div>
@@ -643,5 +643,5 @@ function getWebviewContent(): string {
 }
 
 export function deactivate() {
-  console.log("[QuackCode] Extension deactivated");
+  console.log("[CodeDuck] Extension deactivated");
 }

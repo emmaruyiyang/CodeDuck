@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QuackCode Duck</title>
+  <title>CodeDuck Duck</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -482,7 +482,7 @@
       });
       window.electronAPI.onMute((m) => { muted = m; });
     } else {
-      document.title = 'QuackCode: electronAPI 缺失!';
+      document.title = 'CodeDuck: electronAPI 缺失!';
       document.body.style.outline = '4px solid red';
     }
 
@@ -522,7 +522,7 @@
     positionDuckVertically();
     centerDuck();
     setState('idle');
-    console.log('[QuackCode] renderer initialized');
+    console.log('[CodeDuck] renderer initialized');
   </script>
 </body>
 </html>

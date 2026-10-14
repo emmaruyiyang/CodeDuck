@@ -1,6 +1,6 @@
 {
-  "name": "quackcode",
-  "displayName": "QuackCode",
+  "name": "codeduck",
+  "displayName": "CodeDuck",
   "description": "An adorable duck companion for Claude Code - floats on top, bounces, quacks, and poops when waiting",
   "version": "0.1.0",
   "main": "dist/main.js",
@@ -15,8 +15,8 @@
     "dist": "npm run build && electron-builder --mac && rm -rf release/mac release/mac-arm64 release/.icon-icns release/*.blockmap release/*.yml"
   },
   "build": {
-    "appId": "com.quackcode.app",
-    "productName": "QuackCode",
+    "appId": "com.codeduck.app",
+    "productName": "CodeDuck",
     "asar": false,
     "files": [
       "dist/**/*",

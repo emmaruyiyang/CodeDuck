@@ -1,7 +1,7 @@
 import { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, screen } from "electron";
 import * as path from "path";
 import { DuckStateMachine, DuckState } from "./stateMachine";
-import { QuackCodeServer } from "./server";
+import { CodeDuckServer } from "./server";
 import { HooksManager } from "./hooksManager";
 import { WindowTracker, WindowBounds } from "./windowTracker";
 
@@ -15,7 +15,7 @@ app.commandLine.appendSwitch("autoplay-policy", "no-user-gesture-required");
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let stateMachine: DuckStateMachine;
-let server: QuackCodeServer;
+let server: CodeDuckServer;
 let hooksManager: HooksManager;
 let tracker: WindowTracker;
 
@@ -95,7 +95,7 @@ async function createWindow() {
   if (DEV) mainWindow.webContents.openDevTools({ mode: "detach" });
 
   mainWindow.webContents.on("preload-error", (_e, preloadPath, error) => {
-    console.error("[QuackCode] preload 加载失败:", preloadPath, error);
+    console.error("[CodeDuck] preload 加载失败:", preloadPath, error);
   });
 
   mainWindow.on("closed", () => {
@@ -104,7 +104,7 @@ async function createWindow() {
 
   // 状态机变化 → 通知渲染层（走/跳/拉屎/炸屎/完成都在渲染层实现）
   stateMachine.onStateChange((state: DuckState, data?: any) => {
-    log(`[QuackCode] State changed: ${state}`, data);
+    log(`[CodeDuck] State changed: ${state}`, data);
     if (mainWindow) {
       mainWindow.webContents.send("state-change", { state, walkEnabled, muted });
     }
@@ -124,7 +124,7 @@ async function createWindow() {
 function createTray() {
   tray = new Tray(nativeImage.createEmpty());
   tray.setTitle("🦆"); // 菜单栏显示鸭子
-  tray.setToolTip("QuackCode");
+  tray.setToolTip("CodeDuck");
   refreshTrayMenu();
 }
 
@@ -150,7 +150,7 @@ function refreshTrayMenu() {
       },
     },
     { type: "separator" },
-    { label: "Quit QuackCode", click: () => app.quit() },
+    { label: "Quit CodeDuck", click: () => app.quit() },
   ]);
   tray.setContextMenu(menu);
 }
@@ -168,12 +168,12 @@ async function initializeApp() {
   stateMachine = new DuckStateMachine();
   hooksManager = new HooksManager();
 
-  server = new QuackCodeServer(stateMachine);
+  server = new CodeDuckServer(stateMachine);
   const port = await server.start();
 
   await hooksManager.injectHooks(port);
 
-  console.log(`[QuackCode] Initialized with port ${port}`);
+  console.log(`[CodeDuck] Initialized with port ${port}`);
 }
 
 app.on("ready", async () => {
@@ -184,7 +184,7 @@ app.on("ready", async () => {
 
 // 关掉鸭子窗口不退出（常驻托盘）；真正退出走 before-quit
 app.on("window-all-closed", () => {
-  // 保持后台运行，靠托盘"退出 QuackCode"退出
+  // 保持后台运行，靠托盘"退出 CodeDuck"退出
 });
 
 app.on("before-quit", () => {
@@ -219,7 +219,7 @@ ipcMain.on("show-context-menu", () => {
       },
     },
     { type: "separator" as const },
-    { label: "Quit QuackCode", click: () => app.quit() },
+    { label: "Quit CodeDuck", click: () => app.quit() },
   ];
   const menu = Menu.buildFromTemplate(template as any);
   if (mainWindow) menu.popup({ window: mainWindow });
@@ -234,13 +234,13 @@ ipcMain.on("set-ignore-mouse", (event, ignore: boolean) => {
 // 点击鸭子：切换“从左往右走 / 原地跳”
 ipcMain.on("toggle-walk", () => {
   walkEnabled = !walkEnabled;
-  console.log("[QuackCode] 行走模式:", walkEnabled ? "从左往右走" : "原地跳");
+  console.log("[CodeDuck] 行走模式:", walkEnabled ? "从左往右走" : "原地跳");
   if (mainWindow) mainWindow.webContents.send("walk-mode", walkEnabled);
 });
 
 // 调试：渲染层日志（仅 DEV）
 ipcMain.on("renderer-log", (event, msg: string) => {
-  log("[QuackCode][renderer]", msg);
+  log("[CodeDuck][renderer]", msg);
 });
 
 // 渲染层按当前图标高度上报所需头顶空间（换图标自适应）

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>QuackCode</title>
+<title>CodeDuck</title>
 <meta name="description" content="A floating duck that sits on top of your VS Code window and turns Claude Code's live status into animations you can see and hear." />
 <link rel="icon" href="icon.png" />
 <style>
@@ -98,7 +98,7 @@
 <body>
   <div class="wrap">
     <nav>
-      <div class="brand"><img src="icon.png" alt="" /> QuackCode</div>
+      <div class="brand"><img src="icon.png" alt="" /> CodeDuck</div>
       <div class="nav-right">
         <div class="lang" role="group" aria-label="Language">
           <button type="button" data-lang="en" aria-pressed="true">EN</button>
@@ -113,10 +113,10 @@
         <h1 data-i18n="title">A little duck that<br><span>codes with you</span></h1>
         <p class="sub" data-i18n="sub">It perches on top of your VS Code window and keeps an eye on Claude Code: walks while Claude works, poops 💩 when it's waiting on you, and blows it all up 💥 the moment you reply.</p>
         <div class="cta">
-          <a class="btn btn-primary" href="https://github.com/emmaruyiyang/CodeDuck/releases/latest/download/QuackCode-arm64.dmg" data-i18n="dlArm">
+          <a class="btn btn-primary" href="https://github.com/emmaruyiyang/CodeDuck/releases/latest/download/CodeDuck-arm64.dmg" data-i18n="dlArm">
             Download for Mac<small>Apple Silicon (M-series)</small>
           </a>
-          <a class="btn btn-ghost" href="https://github.com/emmaruyiyang/CodeDuck/releases/latest/download/QuackCode-x64.dmg" data-i18n="dlIntel">
+          <a class="btn btn-ghost" href="https://github.com/emmaruyiyang/CodeDuck/releases/latest/download/CodeDuck-x64.dmg" data-i18n="dlIntel">
             Intel version<small>Pre-2020 Macs</small>
           </a>
         </div>
@@ -142,9 +142,9 @@
     <div class="wrap">
       <h2 data-i18n="installTitle">Install</h2>
       <ol>
-        <li><span data-i18n="i1">Open the .dmg and drag QuackCode into Applications</span></li>
-        <li><span data-i18n="i2">If macOS blocks it on first launch: System Settings → Privacy &amp; Security → scroll down to QuackCode and click “Open Anyway”.<br>If it says the app is “damaged”, run <code>xattr -cr /Applications/QuackCode.app</code> in Terminal</span></li>
-        <li><span data-i18n="i3">System Settings → Privacy &amp; Security → Accessibility, turn on QuackCode, then quit from the 🦆 menu bar icon and reopen</span></li>
+        <li><span data-i18n="i1">Open the .dmg and drag CodeDuck into Applications</span></li>
+        <li><span data-i18n="i2">If macOS blocks it on first launch: System Settings → Privacy &amp; Security → scroll down to CodeDuck and click “Open Anyway”.<br>If it says the app is “damaged”, run <code>xattr -cr /Applications/CodeDuck.app</code> in Terminal</span></li>
+        <li><span data-i18n="i3">System Settings → Privacy &amp; Security → Accessibility, turn on CodeDuck, then quit from the 🦆 menu bar icon and reopen</span></li>
         <li><span data-i18n="i4">Open VS Code and use Claude Code as usual — the duck shows up on its own</span></li>
       </ol>
     </div>
@@ -168,9 +168,9 @@
     s3: '引爆', s3d: '你一回应，炸弹把屎炸开',
     s4: '完成', s4d: '一轮结束，鸭子叫一声',
     installTitle: '安装',
-    i1: '打开 .dmg，把 QuackCode 拖进「应用程序」',
-    i2: '首次打开被拦截时：系统设置 → 隐私与安全性 → 往下找到 QuackCode，点「仍要打开」。<br>如果提示「已损坏」，在终端运行 <code>xattr -cr /Applications/QuackCode.app</code>',
-    i3: '系统设置 → 隐私与安全性 → 辅助功能，打开 QuackCode，然后从菜单栏 🦆 退出重开',
+    i1: '打开 .dmg，把 CodeDuck 拖进「应用程序」',
+    i2: '首次打开被拦截时：系统设置 → 隐私与安全性 → 往下找到 CodeDuck，点「仍要打开」。<br>如果提示「已损坏」，在终端运行 <code>xattr -cr /Applications/CodeDuck.app</code>',
+    i3: '系统设置 → 隐私与安全性 → 辅助功能，打开 CodeDuck，然后从菜单栏 🦆 退出重开',
     i4: '打开 VS Code 正常用 Claude Code，鸭子会自动出现',
   };
 
@@ -185,14 +185,14 @@
     document.querySelectorAll('[data-i18n]').forEach(el => { el.innerHTML = dict[el.dataset.i18n]; });
     document.querySelectorAll('[data-i18n-alt]').forEach(el => { el.alt = dict[el.dataset.i18nAlt]; });
     document.querySelectorAll('.lang button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === lang));
-    try { localStorage.setItem('quackcode-lang', lang); } catch (e) {}
+    try { localStorage.setItem('codeduck-lang', lang); } catch (e) {}
   }
 
   document.querySelectorAll('.lang button').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
 
   // 优先级：?lang=zh 链接参数 > 上次的选择 > 默认英文
   let initial = new URLSearchParams(location.search).get('lang');
-  if (!initial) { try { initial = localStorage.getItem('quackcode-lang'); } catch (e) {} }
+  if (!initial) { try { initial = localStorage.getItem('codeduck-lang'); } catch (e) {} }
   if (initial === 'zh') setLang('zh');
 </script>
 </body>

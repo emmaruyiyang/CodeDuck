@@ -36,7 +36,7 @@ export class WindowTracker {
         const msg = String(err?.message || err);
         if (msg !== this.lastError) {
           this.lastError = msg;
-          console.warn("[QuackCode][tracker] 读取窗口失败:", msg);
+          console.warn("[CodeDuck][tracker] 读取窗口失败:", msg);
         }
         onBounds(null);
       }
@@ -125,7 +125,7 @@ export class WindowTracker {
               .join("  ") + " => " + (chosen ? `${chosen.width}x${chosen.height}@(${chosen.x},${chosen.y})` : "无");
           if (this.debug && sig !== this.lastLog) {
             this.lastLog = sig;
-            console.log(`[QuackCode][tracker] ${proc} 共${wins.length}个窗口: ${sig}`);
+            console.log(`[CodeDuck][tracker] ${proc} 共${wins.length}个窗口: ${sig}`);
           }
 
           if (!chosen) return resolve(null);

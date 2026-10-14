@@ -1,4 +1,4 @@
-# QuackCode 🦆
+# CodeDuck 🦆
 
 🌐 **官网 / 下载：https://www.ruyiyang.com/CodeDuck/**
 
@@ -16,27 +16,27 @@
 ## 环境要求
 
 - **macOS 12+**（Apple Silicon 和 Intel 都支持）
-- 已安装 **[Claude Code](https://claude.com/claude-code)** —— QuackCode 就是配合它工作的
+- 已安装 **[Claude Code](https://claude.com/claude-code)** —— CodeDuck 就是配合它工作的
 - 需要授予 **辅助功能** 权限（用于跟随 VS Code 窗口）
 
 ---
 
 ## 安装（用户版）
 
-1. 下载 DMG：M 系列芯片用 `QuackCode-arm64.dmg`，Intel Mac 用 `QuackCode-x64.dmg`
-2. 双击打开，把 **QuackCode** 拖进「应用程序」
-3. **首次打开**：App 没有 Apple 开发者签名，第一次会被拦截。到 系统设置 → 隐私与安全性，往下找到 QuackCode，点「仍要打开」（macOS 14 及更早也可以在「应用程序」里 右键 → 打开）
+1. 下载 DMG：M 系列芯片用 `CodeDuck-arm64.dmg`，Intel Mac 用 `CodeDuck-x64.dmg`
+2. 双击打开，把 **CodeDuck** 拖进「应用程序」
+3. **首次打开**：App 没有 Apple 开发者签名，第一次会被拦截。到 系统设置 → 隐私与安全性，往下找到 CodeDuck，点「仍要打开」（macOS 14 及更早也可以在「应用程序」里 右键 → 打开）
    - 如提示"已损坏 / 无法验证开发者"，打开「终端」运行：
      ```bash
-     xattr -cr /Applications/QuackCode.app
+     xattr -cr /Applications/CodeDuck.app
      ```
      然后再打开。
-4. **授予辅助功能权限**：系统设置 → 隐私与安全性 → **辅助功能** → 打开 **QuackCode** 的开关
+4. **授予辅助功能权限**：系统设置 → 隐私与安全性 → **辅助功能** → 打开 **CodeDuck** 的开关
    （没有这一步鸭子不会跟随 VS Code 窗口）
-5. 从菜单栏 🦆 的「退出 QuackCode」完全退出后重开一次，让权限生效
+5. 从菜单栏 🦆 的「退出 CodeDuck」完全退出后重开一次，让权限生效
 6. 打开 VS Code，正常使用 Claude Code —— 鸭子会自动出现在窗口上沿
 
-安装后 QuackCode 会自动把 hook 配置**合并**写入 `~/.claude/settings.json`（不会覆盖你已有的 hooks），退出时只移除自己那部分。
+安装后 CodeDuck 会自动把 hook 配置**合并**写入 `~/.claude/settings.json`（不会覆盖你已有的 hooks），退出时只移除自己那部分。
 
 ---
 
@@ -60,11 +60,11 @@
 
 ## 常见问题
 
-- **鸭子不跟随 / 不出现** → 多半是没授辅助功能权限。到 系统设置 → 隐私与安全性 → 辅助功能 打开 QuackCode，然后从菜单栏 🦆 退出重开。
+- **鸭子不跟随 / 不出现** → 多半是没授辅助功能权限。到 系统设置 → 隐私与安全性 → 辅助功能 打开 CodeDuck，然后从菜单栏 🦆 退出重开。
 - **没有声音** → 从菜单栏 🦆 确认没开「静音」；声音文件在 App 内的 `data/sound/`。
 - **多开 VS Code 时鸭子跟哪个** → 跟你**当前聚焦**的那个主窗口。
 - **打开时被系统拦** → 见安装第 3 步（「仍要打开」/ `xattr -cr`）。
-- **想彻底移除** → 菜单栏 🦆 退出，删除 `/Applications/QuackCode.app`。hook 配置会在正常退出时自动清理；若有残留可手动编辑 `~/.claude/settings.json` 删掉带 `quackcode-hook` 标记的条目。
+- **想彻底移除** → 菜单栏 🦆 退出，删除 `/Applications/CodeDuck.app`。hook 配置会在正常退出时自动清理；若有残留可手动编辑 `~/.claude/settings.json` 删掉带 `codeduck-hook` 标记的条目。
 
 ---
 
@@ -74,7 +74,7 @@
 npm install          # 装依赖
 npm run dev          # 编译并启动（开发模式）
 ELECTRON_DEV=true npm run dev   # 开 DevTools + 详细日志
-npm run dist         # 打包成 release/QuackCode-arm64.dmg 和 QuackCode-x64.dmg
+npm run dist         # 打包成 release/CodeDuck-arm64.dmg 和 CodeDuck-x64.dmg
 ```
 
 ### 架构
